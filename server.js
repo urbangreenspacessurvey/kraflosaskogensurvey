@@ -60,39 +60,40 @@ app.post('/submit',async(req,res)=>{
   }catch(err){console.error('Submit error:',err);res.status(500).json({success:false,error:'Server error'})}
 });
 function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}
-
-function csvEscape(v){
-  const s = String(v ?? '');
-  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-  return s;
-}
-function rowsToCsv(rows, fallbackCols=[]){
-  const cols = rows.length ? Object.keys(rows[0]) : fallbackCols;
-  const lines = [cols.join(',')];
-  for (const row of rows){
-    lines.push(cols.map(c => csvEscape(row[c])).join(','));
-  }
-  return { cols, csv: lines.join('\n') };
+function toCsv(rows, columns){
+  const header = columns.join(',');
+  const body = rows.map(r => columns.map(c => {
+    const val = r[c] ?? '';
+    const s = String(val).replace(/"/g, '""');
+    return `"${s}"`;
+  }).join(',')).join('\n');
+  return '\ufeff' + header + (body ? '\n' + body : '');
 }
 app.get('/export/responses.csv', async (req, res) => {
-  try{
+  try {
     const rows = await all(`SELECT * FROM survey_responses ORDER BY id DESC`);
-    const fallbackCols = ['id','created_at','language','nature_overlap','bond_1','bond_2','bond_3','bond_4','func_1','func_2','func_3','func_4','func_5','func_6','func_7','func_8','func_9','func_10','func_11','routine_1','routine_2','routine_3','routine_4','routine_5','routine_6','routine_7','routine_8','routine_9','multi_1','multi_2','multi_3','multi_4','multi_5','multi_6','multi_7','multi_8','multi_9','multi_10','multi_11','distance_from_forest','age_group','gender','education_level','visit_frequency'];
-    const { csv } = rowsToCsv(rows, fallbackCols);
+    const cols = rows.length ? Object.keys(rows[0]) : ['id','created_at','language','nature_overlap','bond_1','bond_2','bond_3','bond_4','func_1','func_2','func_3','func_4','func_5','func_6','func_7','func_8','func_9','func_10','func_11','routine_1','routine_2','routine_3','routine_4','routine_5','routine_6','routine_7','routine_8','routine_9','multi_1','multi_2','multi_3','multi_4','multi_5','multi_6','multi_7','multi_8','multi_9','multi_10','multi_11','distance_from_forest','age_group','gender','education_level','visit_frequency'];
+    const csv = toCsv(rows, cols);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="survey_responses.csv"');
-    res.send('\ufeff' + csv);
-  }catch(err){console.error(err);res.status(500).send('CSV export error')}
+    res.send(csv);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Export error');
+  }
 });
 app.get('/export/map-pins.csv', async (req, res) => {
-  try{
+  try {
     const rows = await all(`SELECT * FROM map_pins ORDER BY id DESC`);
-    const { csv } = rowsToCsv(rows, ['id','response_id','lat','lng','activity','emotion','note']);
+    const cols = rows.length ? Object.keys(rows[0]) : ['id','response_id','lat','lng','activity','emotion','note'];
+    const csv = toCsv(rows, cols);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="map_pins.csv"');
-    res.send('\ufeff' + csv);
-  }catch(err){console.error(err);res.status(500).send('CSV export error')}
+    res.send(csv);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Export error');
+  }
 });
-
-app.get('/database',async(req,res)=>{try{const rows=await all(`SELECT * FROM survey_responses ORDER BY id DESC`);const pins=await all(`SELECT * FROM map_pins ORDER BY id DESC`);const cols=rows.length?Object.keys(rows[0]):['id','created_at','language','nature_overlap','bond_1','bond_2','bond_3','bond_4','func_1','func_2','func_3','func_4','func_5','func_6','func_7','func_8','func_9','func_10','func_11','routine_1','routine_2','routine_3','routine_4','routine_5','routine_6','routine_7','routine_8','routine_9','multi_1','multi_2','multi_3','multi_4','multi_5','multi_6','multi_7','multi_8','multi_9','multi_10','multi_11','distance_from_forest','age_group','gender','education_level','visit_frequency'];const rowsHtml=rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c])}</td>`).join('')}</tr>`).join('');const pinsCols=pins.length?Object.keys(pins[0]):['id','response_id','lat','lng','activity','emotion','note'];const pinsHtml=pins.map(r=>`<tr>${pinsCols.map(c=>`<td>${esc(r[c])}</td>`).join('')}</tr>`).join('');res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Survey database</title><style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f6fbf7}.wrap{max-width:1700px;margin:0 auto;padding:18px}h1,h2{color:#235f33}.card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:20px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1200px}th,td{border:1px solid #d8e2db;padding:8px;text-align:left;vertical-align:top;white-space:normal;word-break:break-word}th{background:#235f33;color:#fff;position:sticky;top:0}a.btn{display:inline-block;background:#235f33;color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700}</style></head><body><div class="wrap"><a class="btn" href="/">Back to survey</a><h1>Survey responses</h1><div class="card"><div class="table-wrap"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div></div><h2>Map pins</h2><div class="card"><div class="table-wrap"><table><thead><tr>${pinsCols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${pinsHtml}</tbody></table></div></div></div></body></html>`)}catch(err){console.error(err);res.status(500).send('Database error')}});
+app.get('/database',async(req,res)=>{try{const rows=await all(`SELECT * FROM survey_responses ORDER BY id DESC`);const pins=await all(`SELECT * FROM map_pins ORDER BY id DESC`);const cols=rows.length?Object.keys(rows[0]):['id','created_at','language','nature_overlap','bond_1','bond_2','bond_3','bond_4','func_1','func_2','func_3','func_4','func_5','func_6','func_7','func_8','func_9','func_10','func_11','routine_1','routine_2','routine_3','routine_4','routine_5','routine_6','routine_7','routine_8','routine_9','multi_1','multi_2','multi_3','multi_4','multi_5','multi_6','multi_7','multi_8','multi_9','multi_10','multi_11','distance_from_forest','age_group','gender','education_level','visit_frequency'];const rowsHtml=rows.map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c])}</td>`).join('')}</tr>`).join('');const pinsCols=pins.length?Object.keys(pins[0]):['id','response_id','lat','lng','activity','emotion','note'];const pinsHtml=pins.map(r=>`<tr>${pinsCols.map(c=>`<td>${esc(r[c])}</td>`).join('')}</tr>`).join('');res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Survey database</title><style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f6fbf7}.wrap{max-width:1700px;margin:0 auto;padding:18px}h1,h2{color:#235f33}.card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin-bottom:20px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1200px}th,td{border:1px solid #d8e2db;padding:8px;text-align:left;vertical-align:top;white-space:normal;word-break:break-word}th{background:#235f33;color:#fff;position:sticky;top:0}a.btn{display:inline-block;background:#235f33;color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700}</style></head><body><div class="wrap"><a class="btn" href="/">Back to survey</a><h1>Survey responses</h1><div class="card"><h2 style="margin-top:0">Download data</h2><p>Download each table as a CSV file that opens in Excel.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="/export/responses.csv">Download responses CSV</a><a class="btn" href="/export/map-pins.csv">Download map pins CSV</a></div></div><div class="card"><div class="table-wrap"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div></div><h2>Map pins</h2><div class="card"><div class="table-wrap"><table><thead><tr>${pinsCols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${pinsHtml}</tbody></table></div></div></div></body></html>`)}catch(err){console.error(err);res.status(500).send('Database error')}});
 app.listen(PORT,()=>console.log(`Server running on http://localhost:${PORT}`));
