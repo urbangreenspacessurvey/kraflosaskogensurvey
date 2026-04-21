@@ -115,7 +115,7 @@ const translations = {
     title: 'Krafslösaskogen Survey',
     main_title: 'KRAFLÖSASKOGEN / SNURROM SURVEY',
     welcome_1: 'Welcome!',
-    welcome_2: 'We are students at Linnaeus University who are working with a project about Krafslösaskogen in one of our courses. We would be grateful for your opinion to better understand how people use and value the area around Snurrom and Värsnäs Golfbana.',
+    welcome_2: 'We are students at Linnaeus University studying Tourism and Sustainability. As part of our course 26VT-4TR410-Tourism and Ecological Economics, we are conducting research about Krafslösaskogen. We would be grateful for your opinion to better understand how people use and value the area around Snurrom and Värsnäs Golfbana.',
     welcome_3: 'We want to understand your relationship with local nature and how it factors into your daily routine. Your answer will help us understand how and if Krafslösaskogen contributes to the city of Kalmar.',
     welcome_4: 'By continuing, you agree that your answers will be collected anonymously for scientific purposes only. Thank you for taking the time to share your opinions.',
     contacts: 'Students: Josefin Grandin, Kexin Zhang, Miro Lyly, Helena Wittke.\n\nSupervisors: Marianna Strzelecka, Arash Akhshik — arash.akhshik@lnu.se; 0765602704',
@@ -147,7 +147,7 @@ const translations = {
     thanks_p: 'Your input is a crucial step toward more inclusive, equitable green space planning for all urban inhabitants, human and otherwise.',
     submit: 'Submit Survey',
     scale7_hint: 'Please answer on a scale from 1 - strongly disagree to 7 - strongly agree.',
-    scale5_hint: 'Please answer on a scale from 1 - strongly disagree to 5 - strongly agree.',
+    scale5_hint: 'Please answer on a scale from 1 - strongly disagree to 7 - strongly agree.',
     activity: 'Activity or experience',
     emotion: 'Feeling',
     note: 'Short note (optional)',
@@ -161,17 +161,13 @@ const translations = {
     age: 'Age',
     gender: 'Gender',
     education: 'Education level',
-    frequency: 'How often do you visit this place?',
-    export_title: 'Download survey data',
-    export_hint: 'Download each table as a CSV file. CSV files can be opened directly in Excel.',
-    export_responses: 'Download responses CSV',
-    export_pins: 'Download map pins CSV'
+    frequency: 'How often do you visit this place?'
   },
   sv: {
     title: 'Krafslösaskogen enkät',
     main_title: 'KRAFLÖSASKOGEN / SNURROM ENKÄT',
     welcome_1: 'Välkommen!',
-    welcome_2: 'Vi är studenter på Linnéuniversitetet och arbetar med ett projekt om Krafslösaskogen i en av våra kurser. Vi hade varit tacksamma för er åsikt för att bättre förstå hur människor använder och värdesätter området kring Snurrom och Värsnäs Golfbana.',
+    welcome_2: 'Vi är studenter på Linnéuniversitetet som studerar Tourism and Sustainability. Som en del av vår kurs 26VT-4TR410-Tourism and Ecological Economics genomför vi en studie om Krafslösaskogen. Vi hade varit tacksamma för er åsikt för att bättre förstå hur människor använder och värdesätter området kring Snurrom och Värsnäs Golfbana.',
     welcome_3: 'Vi vill förstå er relation till den lokala naturen och hur den påverkar er dagliga rutin. Era svar kommer att hjälpa oss att förstå hur och om Krafslösaskogen bidrar till staden Kalmar.',
     welcome_4: 'Genom att fortsätta accepterar du att dina svar samlas in anonymt och endast i vetenskapligt syfte. Tack för att du tar dig tid att dela med dig av dina åsikter.',
     contacts: 'Studenter: Josefin Grandin, Kexin Zhang, Miro Lyly, Helena Wittke.\n\nHandledare: Marianna Strzelecka, Arash Akhshik — arash.akhshik@lnu.se; 0765602704',
@@ -203,7 +199,7 @@ const translations = {
     thanks_p: 'Ditt bidrag är ett viktigt steg mot en mer inkluderande och rättvis planering av grönområden för alla stadens invånare – både människor och andra arter.',
     submit: 'Skicka in enkäten',
     scale7_hint: 'Vänligen svara på en skala från 1 - instämmer inte alls till 7 - instämmer helt.',
-    scale5_hint: 'Vänligen svara på en skala från 1 - instämmer inte alls till 5 - instämmer helt.',
+    scale5_hint: 'Vänligen svara på en skala från 1 - instämmer inte alls till 7 - instämmer helt.',
     activity: 'Aktivitet eller upplevelse',
     emotion: 'Känsla',
     note: 'Kort notering (valfritt)',
@@ -217,11 +213,7 @@ const translations = {
     age: 'Ålder',
     gender: 'Kön',
     education: 'Utbildningsnivå',
-    frequency: 'Hur ofta besöker du denna plats?',
-    export_title: 'Ladda ner enkätdata',
-    export_hint: 'Ladda ner varje tabell som en CSV-fil. CSV-filer kan öppnas direkt i Excel.',
-    export_responses: 'Ladda ner svar som CSV',
-    export_pins: 'Ladda ner kartpunkter som CSV'
+    frequency: 'Hur ofta besöker du denna plats?'
   }
 };
 
@@ -253,11 +245,13 @@ function renderLikertList(id, items, prefix, max) {
   const c = document.getElementById(id);
   c.innerHTML = '';
   items[currentLanguage].forEach((txt, idx) => {
-    const q = document.createElement('div');
-    q.className = 'question';
-    q.innerHTML = `<p class="question-title">${idx + 1}. ${txt}</p>`;
+    const card = document.createElement('div');
+    card.className = 'matrix-card';
+    const title = document.createElement('div');
+    title.className = 'matrix-title';
+    title.textContent = `${idx + 1}. ${txt}`;
     const opts = document.createElement('div');
-    opts.className = 'likert';
+    opts.className = 'matrix-options';
     for (let i = 1; i <= max; i++) {
       let labelText = String(i);
       if (i === 1) labelText = currentLanguage === 'sv' ? '1 - instämmer inte alls' : '1 - strongly disagree';
@@ -266,8 +260,9 @@ function renderLikertList(id, items, prefix, max) {
       l.innerHTML = `<input type="radio" name="${prefix}${idx + 1}" value="${i}" required> ${labelText}`;
       opts.appendChild(l);
     }
-    q.appendChild(opts);
-    c.appendChild(q);
+    card.appendChild(title);
+    card.appendChild(opts);
+    c.appendChild(card);
   });
 }
 
@@ -282,10 +277,10 @@ function renderFunctionality() {
     title.textContent = `${idx + 1}. ${txt}`;
     const opts = document.createElement('div');
     opts.className = 'matrix-options';
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 7; i++) {
       let labelText = String(i);
       if (i === 1) labelText = currentLanguage === 'sv' ? '1 - instämmer inte alls' : '1 - strongly disagree';
-      if (i === 5) labelText = currentLanguage === 'sv' ? '5 - instämmer helt' : '5 - strongly agree';
+      if (i === 7) labelText = currentLanguage === 'sv' ? '7 - instämmer helt' : '7 - strongly agree';
       const l = document.createElement('label');
       l.innerHTML = `<input type="radio" name="func_${idx + 1}" value="${i}" required> ${labelText}`;
       opts.appendChild(l);
